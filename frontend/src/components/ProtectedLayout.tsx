@@ -1,46 +1,26 @@
-// frontend/src/components/ProtectedLayout.tsx - Better auth handling
 "use client";
 
 import { useAuth } from '@/hooks/useAuth';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import Sidebar from './Sidebar';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
+  // Simple redirect logic
   useEffect(() => {
-    // Skip redirect during loading
-    if (isLoading) return;
-
-    // Allow login page
-    if (pathname === '/login') return;
-
-    // Redirect to login if not authenticated and not already on login page
-    if (!user && pathname !== '/login') {
-      console.log('🔒 Not authenticated, redirecting to login');
-      router.replace('/login'); // Use replace instead of push
-      return;
+    if (!isLoading && !user && pathname !== '/login') {
+      window.location.href = '/login';
     }
+  }, [user, isLoading, pathname]);
 
-    // Redirect to dashboard if authenticated and on login page
-    if (user && pathname === '/login') {
-      console.log('✅ Already authenticated, redirecting to dashboard');
-      router.replace('/'); // Use replace instead of push
-      return;
-    }
-  }, [user, isLoading, pathname, router]);
-
-  // Show loading spinner
+  // Show loading
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
       </div>
     );
   }
@@ -62,7 +42,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     );
   }
 
-  // Loading state while redirecting
+  // Fallback loading
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>

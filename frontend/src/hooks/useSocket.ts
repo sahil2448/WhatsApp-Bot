@@ -3,7 +3,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { Message, ConnectionStatus } from "@/types";
+
+interface Message {
+  id: string;
+  from?: string;
+  to?: string;
+  body: string;
+  timestamp: number;
+  direction: "incoming" | "outgoing";
+  type: string;
+}
+
+interface ConnectionStatus {
+  state: "qr" | "authenticated" | "ready" | "disconnected" | "auth_failure";
+  message?: string;
+}
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
@@ -33,10 +47,12 @@ export function useSocket() {
     });
 
     socket.on("qr", (data: { dataUrl: string }) => {
+      console.log("📱 QR Code received");
       setQrCode(data.dataUrl);
     });
 
     socket.on("status", (status: ConnectionStatus) => {
+      console.log("📊 Status update:", status);
       setStatus(status);
       if (status.state === "ready") {
         setQrCode(null); // Clear QR code when connected

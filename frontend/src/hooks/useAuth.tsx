@@ -1,6 +1,5 @@
-// frontend/src/hooks/useAuth.ts
 "use client";
-// import jwt from 'jsonwebtoken'; // ❌ Missing!
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 interface User {
@@ -23,23 +22,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
 
+  // Check authentication on mount and persist across navigation
   useEffect(() => {
-    verifyToken();
+    checkAuthStatus();
   }, []);
 
-  const verifyToken = async () => {
+  const checkAuthStatus = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/auth/verify`, {
-        
+        method: 'GET',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      const data = await response.json();
       
-      if (data.success) {
-        setUser(data.user);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          setUser(data.user);
+          console.log('✅ User authenticated:', data.user);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
       }
     } catch (error) {
-      console.error('Token verification failed:', error);
+      console.error('Auth check failed:', error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -58,15 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
       
-      if (data.success) {
+      if (data.success && data.user) {
         setUser(data.user);
+        console.log('✅ Login successful');
         return true;
       } else {
-        console.error('Login failed:', data.error);
+        console.error('❌ Login failed:', data.error);
         return false;
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       return false;
     }
   };
@@ -81,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Logout error:', error);
     } finally {
       setUser(null);
+      window.location.href = '/login';
     }
   };
 
